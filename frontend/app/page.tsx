@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Plot from '@/components/PlotlyChart';
+import Header from '@/components/header';
+import '../styles/global.scss';
 
 type OptionContract = {
   type: 'call' | 'put';
   strike: number;
-  price: number;
+  premium: number;
   expiry: string;
 };
 
@@ -18,6 +20,7 @@ type HeatmapData = {
 };
 
 export default function Home() {
+  const [model, setModel] = useState('black-scholes');
   const [ticker, setTicker] = useState<string>('');
   const [contracts, setContracts] = useState<OptionContract[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -47,7 +50,7 @@ export default function Home() {
           params: {
             ticker,
             strike: selected.strike,
-            price: selected.price,
+            premium: selected.premium,
             type: selected.type,
             expiry: selected.expiry,
           },
@@ -60,18 +63,18 @@ export default function Home() {
   };
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Options Profit Heatmap</h1>
+    <div className="">
+      <Header model={model} setModel={setModel} />
 
-      <div className="flex gap-2 mb-4">
+      <div className="">
         <input
-          className="border px-2 py-1"
+          className=""
           placeholder="Enter ticker (e.g., AAPL)"
           value={ticker}
           onChange={(e) => setTicker(e.target.value.toUpperCase())}
         />
         <button
-          className="bg-blue-500 text-white px-3 py-1 rounded"
+          className=""
           onClick={fetchContracts}
         >
           Get Options
@@ -80,13 +83,13 @@ export default function Home() {
 
       {contracts.length > 0 && (
         <select
-          className="border px-2 py-1 mb-4"
+          className=""
           onChange={(e) => setSelectedIndex(Number(e.target.value))}
         >
           <option value="">Select an Option Contract</option>
           {contracts.map((c, i) => (
             <option key={i} value={i}>
-              {c.type.toUpperCase()} ${c.strike} (premium: ${c.price}) exp: {c.expiry}
+              {c.type.toUpperCase()} ${c.strike} (premium: ${c.premium}) exp: {c.expiry}
             </option>
           ))}
         </select>
@@ -94,7 +97,6 @@ export default function Home() {
 
       {selectedIndex !== null && (
         <button
-          className="ml-2 bg-green-600 text-white px-3 py-1 rounded"
           onClick={fetchHeatmap}
         >
           Show Heatmap
@@ -109,15 +111,25 @@ export default function Home() {
               x: heatmap.x,
               y: heatmap.y,
               type: 'heatmap',
-              colorscale: 'Viridis',
+              colorscale: [
+                [0.0, 'rgb(255, 0, 0)'],     // full red
+                [0.47, 'rgb(255, 150, 150)'],// light red
+                [0.5, 'rgb(255, 255, 255)'], // white at zero
+                [0.53, 'rgb(193, 255, 193)'],// light green
+                [1.0, 'rgb(0, 255, 0)'],     // full green
+              ],
+              zmid: 0,  // center color scale at 0
             },
           ]}
           layout={{
-            title: {
-                text:  `Profit Heatmap for ${ticker} ${contracts[selectedIndex!].type} $${contracts[selectedIndex!].strike}`
+            title: { text: `Profit Heatmap for ${ticker} ${contracts[selectedIndex!].type} $${contracts[selectedIndex!].strike}` },
+            xaxis: {
+              title: { text: 'Days Until Expiry' },
+              autorange: 'reversed',
             },
-            xaxis: { title: {text: 'Stock Price'} },
-            yaxis: { title: {text: 'Days Until Expiry'} },
+            yaxis: {
+              title: { text: 'Stock Price' },
+            },
           }}
         />
       )}
