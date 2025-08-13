@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import Plot from '@/components/PlotlyChart';
-import Header from '@/components/header';
+import Navbar from '@/components/NavBar';
 import '../styles/global.scss';
 
 type OptionContract = {
@@ -64,8 +64,9 @@ export default function Home() {
 
   return (
     <div className="">
-      <Header model={model} setModel={setModel} />
-
+      <div className="nav-container">
+        <Navbar model={model} setModel={setModel} />
+      </div>
       <div className="">
         <input
           className=""

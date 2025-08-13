@@ -1,7 +1,5 @@
-import jax.numpy as jnp
-from jax.scipy.stats import norm as jnorm
-from scipy import optimize
-from jax import grad
+import numpy as np
+from scipy.stats import norm
 from datetime import datetime
 import yfinance as yf
 from jax import config
@@ -10,50 +8,51 @@ config.update("jax_debug_nans", True)
 
 def black_scholes(S, K, T, b, sigma, option_type):
     """Black-Scholes evaluation"""
-    d1 = (jnp.log(S / K) + (b + 0.5 * sigma**2) * T) / (sigma * jnp.sqrt(T))
-    d2 = d1 - sigma * jnp.sqrt(T)
+    d1 = (np.log(S / K) + (b + 0.5 * sigma**2) * T) / (sigma * np.sqrt(T))
+    d2 = d1 - sigma * np.sqrt(T)
     if option_type == "call":
         """Black-Scholes call option price"""
-        return S * jnorm.cdf(d1) - K * jnp.exp(-b * T) * jnorm.cdf(d2)
+        return S * norm.cdf(d1) - K * np.exp(-b * T) * norm.cdf(d2)
     else: 
         """Black-Scholes put option price"""
-        return -S * jnorm.cdf(-d1) + K * jnp.exp(-b * T) * jnorm.cdf(-d2)
+        return -S * norm.cdf(-d1) + K * np.exp(-b * T) * norm.cdf(-d2)
 
-def loss_function(S, K, T, r, sigma, premium, option_type):
-    """Minimise premium discrepancy (L1 Loss)"""
-    # Call black scholes model to get premium estimate with our current guess for sigma
-    theoretical_premium = black_scholes(S, K, T, r, sigma, option_type)
+# def loss_function(S, K, T, r, sigma, premium, option_type):
+#     """Minimise premium discrepancy (L1 Loss)"""
+#     # Get premium estimate with our current guess for sigma
+#     theoretical_premium = black_scholes(S, K, T, r, sigma, option_type)
 
-    # Minimise difference between theoretical and actual market premium
-    return (theoretical_premium - premium)
+#     # Minimise difference between theoretical and actual market premium
+#     return (theoretical_premium - premium)
 
-# Partial derivative(gradient) of loss function w.r.t sigma
-sigma_grad = grad(loss_function, argnums=4)
+# # Partial derivative(gradient) of loss function w.r.t sigma
+# sigma_grad = grad(loss_function, argnums=4)
 
-def get_implied_vol(S, K, T, r, sigma, premium, option_type):
-    """Compute implied volatility"""
-    epsilon = .001 # Maximum difference between theoretical and actual
-    max_iter = 20 # Stop at 20 iterations 
-    converged = False
-    for i in range(max_iter):
-        # Compute gradient of loss function w.r.t sigma
-        loss_gradient = sigma_grad(S, K, T, r, sigma, premium, option_type)
-        loss = loss_function(S, K, T, r, sigma, premium, option_type)
+# def get_implied_vol(S, K, T, r, sigma, premium, option_type):
+#     """Compute implied volatility"""
+#     epsilon = .001 # Maximum difference between theoretical and actual
+#     max_iter = 20 # Stop at 20 iterations 
+#     converged = False
+#     for i in range(max_iter):
+#         # Compute gradient of loss function w.r.t sigma
+#         loss_gradient = sigma_grad(S, K, T, r, sigma, premium, option_type)
+#         loss = loss_function(S, K, T, r, sigma, premium, option_type)
         
-        print(f"Iter {i}: sigma = {sigma:.6f}, loss = {loss:.6f}, grad = {loss_gradient:.6f}")
+#         print(f"Iter {i}: sigma = {sigma:.6f}, loss = {loss:.6f}, grad = {loss_gradient:.6f}")
         
-        # If discrepancy is less than tolerance, stop
-        if abs(loss) < epsilon:
-            converged = True
-            break
-        else:   
-            # Update sigma according to Newton's method
-            sigma = sigma - loss / loss_gradient
-    if not converged:
-        print("Did not converge")
-    return sigma
+#         # If discrepancy is less than tolerance, stop
+#         if abs(loss) < epsilon:
+#             converged = True
+#             break
+#         else:   
+#             # Update sigma according to Newton's method
+#             sigma = sigma - loss / loss_gradient
+#     if not converged:
+#         print("Did not converge")
+#     return sigma
 # vol = get_implied_vol(200, 210, 10/365.25, .05, 1.2, 13.35, "call")
 # print(vol)
+
 def calculate_heatmap_data(ticker, strike, premium, option_type, expiry):
     """Heatmap generation"""
     strike = float(strike)  # K (Strike Price)
@@ -65,24 +64,19 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry):
     
     # Sigma estimate (annualised volatility)
     df = stock.history(period="1y")
-    prices = jnp.array(df["Close"].values)
-    log_returns = jnp.log(prices[1:] / prices[:-1])
-    sigma = jnp.std(log_returns) * jnp.sqrt(252.0)
-    # option_chain = stock.option_chain(expiry)
-    # if option_type == "call":
-    #     contracts = option_chain.calls
-    #     contract = contracts[contracts['strike'] == strike]
-    # print(option_chain.calls)
+    prices = np.array(df["Close"].values)
+    log_returns = np.log(prices[1:] / prices[:-1])
+    sigma = np.std(log_returns) * np.sqrt(252.0)
 
     # Stock price range: ±10% of current
-    prices = jnp.linspace(current_price * 1.1, current_price * 0.9, 25)
+    prices = np.linspace(current_price * 1.1, current_price * 0.9, 25)
     
     # Days from now until expiry
     days = (expiry_date - today).days
     if days <= 0:
         return {"error": "Expiry date is in the past"}
 
-    times = jnp.linspace(days, 1, days) # T (time until expiry)
+    times = np.linspace(days, 1, days) # T (time until expiry)
     # Fill heatmap with cells x,y(time till expiry, stock price) with option profit Z
     Z = []
     for S in prices:

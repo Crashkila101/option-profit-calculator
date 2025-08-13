@@ -1,7 +1,12 @@
 import React from 'react'
+import Image from 'next/image'
 import '../styles/global.scss';
+import '../styles/Navbar.scss';
+import logoLight from '../images/logo-light.png';
+// import logoDark from '../images/logo-dark.png';
 
-let Header = ({ model, setModel }: { model: string; setModel: (model: string) => void }) => {
+
+const Navbar = ({ model, setModel }: { model: string; setModel: (model: string) => void }) => {
   return (
     // <header>
     //   <div>
@@ -21,20 +26,17 @@ let Header = ({ model, setModel }: { model: string; setModel: (model: string) =>
     //     </div>
     //   </div>
     // </header>
-    <header>
-      <nav id="navbar" className="">
-      <div className="">
-        <a href="#" className="">
-          <span className="">
-            Options Profit Visualiser
-          </span>
-          <div>
-          </div>
-        </a>
-      </div>
-      </nav>
-    </header>
+    <div className="navbar">
+      <Image src={logoLight} alt="" className="logo"></Image>
+      <ul>
+        <li>Home</li>
+        <li>Black Scholes</li>
+        <li>Monte Carlo</li>
+        <li>Binomial</li>
+      </ul>
+      {/* <Image src={} alt="" className="darkmode-toggle-icon"></Image> */}
+    </div>
   );
 };
 
-export default Header;
+export default Navbar;
