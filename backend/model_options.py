@@ -72,11 +72,12 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry):
     prices = np.linspace(current_price * 1.1, current_price * 0.9, 25)
     
     # Days from now until expiry
-    days = (expiry_date - today).days
+    days = (expiry_date - today).days+1
     if days <= 0:
         return {"error": "Expiry date is in the past"}
-
-    times = np.linspace(days, 1, days) # T (time until expiry)
+    print(days)
+    times = np.linspace(days, 0, days+1) # T (time until expiry)
+    print(times)
     # Fill heatmap with cells x,y(time till expiry, stock price) with option profit Z
     Z = []
     for S in prices:
@@ -86,8 +87,8 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry):
             # sigma = get_implied_vol(S, strike, T, r, sigma, premium, option_type)
             option_price = black_scholes(S, strike, T, r, sigma, option_type)
             # intrinsic_value = max(S - strike, 0) if option_type == "call" else max(strike - S, 0)
-            # extrinsic_value = option_price - intrinsic value
-            # profit = intrinsic_value - premium + extrinsic value
+            # extrinsic_value = option_price - intrinsic_value
+            # profit = (intrinsic_value - premium + extrinsic_value) * 100
             profit = (option_price - premium) * 100
             # print("Value at expiry: " + str(profit) + " for price of underlying " + str(S))
             row.append(profit)

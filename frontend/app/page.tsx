@@ -25,6 +25,7 @@ export default function Home() {
   const [contracts, setContracts] = useState<OptionContract[]>([]);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [heatmap, setHeatmap] = useState<HeatmapData | null>(null);
+  const [theme, setTheme] = useState('light');
 
   const fetchContracts = async () => {
     try {
@@ -63,10 +64,8 @@ export default function Home() {
   };
 
   return (
-    <div className="">
-      <div className="nav-container">
-        <Navbar model={model} setModel={setModel} />
-      </div>
+    <div className={`container ${theme}`}>
+      <Navbar theme={theme} setTheme={setTheme} model={model} setModel={setModel}/>
       <div className="">
         <input
           className=""

@@ -13,7 +13,12 @@ body {
   font-family: sans-serif;
 }
 
-.nav-container{
+.container{
   width: 100vw;
   min-height: 100vh;
+  background:rgb(210, 218, 255);
+  transition: 0.2s;
+}
+.container.dark{
+  background: rgb(8, 7, 15);
 }

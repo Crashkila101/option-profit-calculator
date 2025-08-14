@@ -1,12 +1,21 @@
 import React from 'react'
+// import { useState } from 'react'
 import Image from 'next/image'
 import '../styles/global.scss';
 import '../styles/Navbar.scss';
 import logoLight from '../images/logo-light.png';
-// import logoDark from '../images/logo-dark.png';
+import logoDark from '../images/logo-dark.png';
+import toggleDark from '../images/darkmode.png';
+import toggleLight from '../images/lightmode.png'
 
 
-const Navbar = ({ model, setModel }: { model: string; setModel: (model: string) => void }) => {
+const Navbar = ({theme, setTheme, model, setModel}) => {
+  const toggle = () => {
+    if (theme=='light')
+      setTheme('dark');
+    else if (theme=='dark')
+      setTheme('light');
+  }
   return (
     // <header>
     //   <div>
@@ -27,14 +36,14 @@ const Navbar = ({ model, setModel }: { model: string; setModel: (model: string) 
     //   </div>
     // </header>
     <div className="navbar">
-      <Image src={logoLight} alt="" className="logo"></Image>
+      <Image src={theme == 'light' ? logoLight : logoDark} alt="" className="logo"></Image>
       <ul>
         <li>Home</li>
         <li>Black Scholes</li>
         <li>Monte Carlo</li>
         <li>Binomial</li>
       </ul>
-      {/* <Image src={} alt="" className="darkmode-toggle-icon"></Image> */}
+      <Image onClick={()=>{toggle()}} src={theme == 'light' ? toggleDark : toggleLight} alt="" className="darkmode-toggle-icon"></Image>
     </div>
   );
 };
