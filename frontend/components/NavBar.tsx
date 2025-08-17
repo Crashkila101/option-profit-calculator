@@ -9,41 +9,39 @@ import toggleDark from '../images/darkmode.png';
 import toggleLight from '../images/lightmode.png'
 
 
-const Navbar = ({theme, setTheme, model, setModel}) => {
+const Navbar = ({ theme, setTheme, model, setModel }:
+  { theme: string; setTheme: (model: string) => void; model: string; setModel: (model: string) => void }
+) => {
+
   const toggle = () => {
-    if (theme=='light')
+    if (theme == 'light')
       setTheme('dark');
-    else if (theme=='dark')
+    else if (theme == 'dark')
       setTheme('light');
   }
+  // for rendering models dynamically
+  const navItems = [
+    { label: 'Home', value: 'black-scholes' },
+    { label: 'Black Scholes', value: 'black-scholes' },
+    { label: 'Monte Carlo', value: 'monte-carlo' },
+    { label: 'Binomial', value: 'binomial' }
+  ];
+
   return (
-    // <header>
-    //   <div>
-    //     <h1>Options Profit Visualizer</h1>
-    //     <div>
-    //       <label htmlFor="model-select" className="text-sm">Pricing Model:</label>
-    //       <select
-    //         id="model-select"
-    //         value={model}
-    //         onChange={(e) => setModel(e.target.value)}
-    //         className="bg-gray-700 text-white p-1 rounded-md"
-    //       >
-    //         <option value="black-scholes">Black-Scholes</option>
-    //         <option value="binomial">Binomial</option>
-    //         <option value="whaley">Whaley</option>
-    //       </select>
-    //     </div>
-    //   </div>
-    // </header>
     <div className="navbar">
       <Image src={theme == 'light' ? logoLight : logoDark} alt="" className="logo"></Image>
       <ul>
-        <li>Home</li>
-        <li>Black Scholes</li>
-        <li>Monte Carlo</li>
-        <li>Binomial</li>
+        {navItems.map((item, idx) => (
+          <li
+            key={idx}
+            onClick={() => setModel(item.value)}
+            className={model === item.value ? 'active' : ''}
+          >
+            {item.label}
+          </li>
+        ))}
       </ul>
-      <Image onClick={()=>{toggle()}} src={theme == 'light' ? toggleDark : toggleLight} alt="" className="darkmode-toggle-icon"></Image>
+      <Image onClick={() => { toggle() }} src={theme == 'light' ? toggleDark : toggleLight} alt="" className="darkmode-toggle-icon"></Image>
     </div>
   );
 };

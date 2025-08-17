@@ -19,9 +19,10 @@ def generate_heatmap(
     strike: float,
     premium: float,
     type: Literal["call", "put"],
-    expiry: str 
+    expiry: str,
+    model: str
 ):
-    return {"heatmap": calculate_heatmap_data(ticker, strike, premium, type, expiry)}
+    return {"heatmap": calculate_heatmap_data(ticker, strike, premium, type, expiry, model)}
 
 @app.get("/options")
 def get_options(ticker: str):

@@ -54,6 +54,7 @@ export default function Home() {
             premium: selected.premium,
             type: selected.type,
             expiry: selected.expiry,
+            model: model
           },
         }
       );
@@ -65,74 +66,96 @@ export default function Home() {
 
   return (
     <div className={`container ${theme}`}>
-      <Navbar theme={theme} setTheme={setTheme} model={model} setModel={setModel}/>
-      <div className="">
-        <input
-          className=""
-          placeholder="Enter ticker (e.g., AAPL)"
-          value={ticker}
-          onChange={(e) => setTicker(e.target.value.toUpperCase())}
-        />
-        <button
-          className=""
-          onClick={fetchContracts}
-        >
-          Get Options
-        </button>
+      <Navbar theme={theme} setTheme={setTheme} model={model} setModel={setModel} />
+      <div className="content-wrapper">
+        <div className="ticker-input-group">
+          <input
+            className="ticker-input"
+            placeholder="Enter ticker (e.g., AAPL)"
+            value={ticker}
+            onChange={(e) => setTicker(e.target.value.toUpperCase())}
+          />
+          <button
+            className="get-options-button"
+            onClick={fetchContracts}
+          >
+            Get Options
+          </button>
+        </div>
+
+        {contracts.length > 0 && (
+          <select
+            className="contract-select"
+            onChange={(e) => setSelectedIndex(Number(e.target.value))}
+          >
+            <option value="">Select an Option Contract</option>
+            {/* Group contracts by expiry */}
+            {Object.entries(
+              contracts.reduce((groups: any, contract, i) => {
+                if (!groups[contract.expiry]) groups[contract.expiry] = [];
+                groups[contract.expiry].push({ ...contract, index: i });
+                return groups;
+              }, {})
+            ).map(([expiry, contractsForExpiry]) => (
+              <optgroup key={expiry} label={`Expiry: ${expiry}`}>
+                {contractsForExpiry.map((c: any) => (
+                  <option key={c.index} value={c.index}>
+                    {c.type.toUpperCase()} ${c.strike} (premium: ${c.premium})
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        )}
+        {selectedIndex !== null && (
+          <button onClick={fetchHeatmap} className="show-heatmap-button">
+            Show Heatmap
+          </button>
+        )}
+        <div className="heatmap-container">
+          {heatmap && (
+            <Plot
+              data={[
+                {
+                  z: heatmap.z,
+                  x: heatmap.x,
+                  y: heatmap.y,
+                  type: 'heatmap',
+                  colorscale: [
+                    [0.0, 'rgb(255, 0, 0)'],     // full red
+                    [0.47, 'rgb(255, 150, 150)'],// light red
+                    [0.5, 'rgb(255, 255, 255)'], // white at zero
+                    [0.53, 'rgb(193, 255, 193)'],// light green
+                    [1.0, 'rgb(0, 255, 0)'],     // full green
+                  ],
+                  zmid: 0,  // center color scale at 0
+                  text: heatmap.z.map(row =>
+                    row.map(value => value.toFixed(0))
+                  ),
+                  texttemplate: "%{text}",
+                  textfont: {
+                    size: 10,
+                    color: "auto"
+                  },
+                  hovertemplate: 'Days: %{x}<br>Price: $%{y}<br>P&L: $%{z:.2f}<extra></extra>'
+                }
+              ]}
+              layout={{
+                title: { text: `Profit Heatmap for ${ticker} ${contracts[selectedIndex!].type} $${contracts[selectedIndex!].strike}` },
+                xaxis: {
+                  title: { text: 'Days Until Expiry' },
+                  autorange: 'reversed',
+                },
+                yaxis: {
+                  title: { text: 'Stock Price' },
+                },
+                width: 800,
+                height: 700
+              }}
+            />
+          )}
+        </div>
       </div>
-
-      {contracts.length > 0 && (
-        <select
-          className=""
-          onChange={(e) => setSelectedIndex(Number(e.target.value))}
-        >
-          <option value="">Select an Option Contract</option>
-          {contracts.map((c, i) => (
-            <option key={i} value={i}>
-              {c.type.toUpperCase()} ${c.strike} (premium: ${c.premium}) exp: {c.expiry}
-            </option>
-          ))}
-        </select>
-      )}
-
-      {selectedIndex !== null && (
-        <button
-          onClick={fetchHeatmap}
-        >
-          Show Heatmap
-        </button>
-      )}
-
-      {heatmap && (
-        <Plot
-          data={[
-            {
-              z: heatmap.z,
-              x: heatmap.x,
-              y: heatmap.y,
-              type: 'heatmap',
-              colorscale: [
-                [0.0, 'rgb(255, 0, 0)'],     // full red
-                [0.47, 'rgb(255, 150, 150)'],// light red
-                [0.5, 'rgb(255, 255, 255)'], // white at zero
-                [0.53, 'rgb(193, 255, 193)'],// light green
-                [1.0, 'rgb(0, 255, 0)'],     // full green
-              ],
-              zmid: 0,  // center color scale at 0
-            },
-          ]}
-          layout={{
-            title: { text: `Profit Heatmap for ${ticker} ${contracts[selectedIndex!].type} $${contracts[selectedIndex!].strike}` },
-            xaxis: {
-              title: { text: 'Days Until Expiry' },
-              autorange: 'reversed',
-            },
-            yaxis: {
-              title: { text: 'Stock Price' },
-            },
-          }}
-        />
-      )}
     </div>
   );
 }
