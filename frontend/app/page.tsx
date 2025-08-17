@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState } from 'react';
@@ -11,12 +12,14 @@ type OptionContract = {
   strike: number;
   premium: number;
   expiry: string;
+  model: 'black-scholes' | 'monte-carlo' | 'binomial'
 };
 
 type HeatmapData = {
   x: number[];
   y: number[];
   z: number[][];
+  metrics: any;
 };
 
 export default function Home() {
@@ -167,9 +170,29 @@ export default function Home() {
               <div className="option-metrics">
                 <h3>Estimated returns:</h3>
                 <div className="metrics-grid">
+                  <div className="metric-card current-price">
+                    <h4>Current Price</h4>
+                    <div className="metric-value">{heatmap.metrics.current_price}</div>
+                  </div>
+
+                  <div className="metric-card strike">
+                    <h4>Strike Price</h4>
+                    <div className="metric-value">{heatmap.metrics.strike}</div>
+                  </div>
+                  
+                  <div className="metric-card premium">
+                    <h4>Premium</h4>
+                    <div className="metric-value">${heatmap.metrics.premium} x 100 contracts</div>
+                  </div>
+
                   <div className="metric-card probability">
                     <h4>Probability of Profit</h4>
                     <div className="metric-value">{heatmap.metrics.probability_profit}%</div>
+                  </div>
+
+                  <div className="metric-card entry-cost">
+                    <h4>Entry Cost</h4>
+                    <div className="metric-value">${heatmap.metrics.entry_cost}</div>
                   </div>
 
                   <div className="metric-card risk">
@@ -183,7 +206,7 @@ export default function Home() {
                   </div>
 
                   <div className="metric-card breakeven">
-                    <h4>Breakeven Price at expiry</h4>
+                    <h4>Breakeven Price at Expiry</h4>
                     <div className="metric-value">${heatmap.metrics.breakeven_price}</div>
                   </div>
                 </div>

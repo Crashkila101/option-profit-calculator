@@ -126,22 +126,27 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
     b = r # Option is without dividend yield
     N = 100 # Number of timesteps for binomial
     
-    # Accurate sigma (implied volatility)
-    opt_chain = stock.option_chain(expiry)
-    calls = opt_chain.calls
-    sigma = calls.loc[calls['strike'] == strike, 'impliedVolatility'].iloc[0]
-    
-    # Sigma estimate (annualised volatility)
-    # df = stock.history(period="1y")
-    # change = np.array(df["Close"].values)
-    # log_returns = np.log(change[1:] / change[:-1])
-    # sigma = np.std(log_returns) * np.sqrt(252.0)
+    try:
+        # Accurate sigma (implied volatility)
+        opt_chain = stock.option_chain(expiry)
+        if option_type == "call":
+            calls = opt_chain.calls
+            sigma = calls.loc[calls['strike'] == strike, 'impliedVolatility'].iloc[0]
+        else:
+            puts = opt_chain.puts
+            sigma = puts.loc[puts['strike'] == strike, 'impliedVolatility'].iloc[0]
+    except:
+        # Fallback to sigma estimate (annualised volatility)
+        df = stock.history(period="1y")
+        change = np.array(df["Close"].values)
+        log_returns = np.log(change[1:] / change[:-1])
+        sigma = np.std(log_returns) * np.sqrt(252.0)
 
 
     # Days from now until expiry
     days = (expiry_date - today).days+1
     if days <= 0:
-        return {"error": "Expiry date is in the past"}
+        raise ValueError("Expiry date is in the past")
     T_curr = days / 365.25
 
     # Stock price range: ±10% of current
@@ -201,8 +206,9 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
         "metrics": {
             "current_price": round(current_price, 2),
             "strike": strike,
-            "entry_cost": max_risk,
-            "max_risk": max_risk,
+            "premium": premium,
+            "entry_cost": round(max_risk, 2),
+            "max_risk": round(max_risk, 2),
             "probability_profit": round(prob_profit * 100, 2),
             "max_return": max_return,
             "breakeven_price": round(breakeven, 2)
