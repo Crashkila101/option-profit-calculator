@@ -9,8 +9,8 @@ import toggleDark from '../images/darkmode.png';
 import toggleLight from '../images/lightmode.png'
 
 
-const Navbar = ({ theme, setTheme, model, setModel }:
-  { theme: string; setTheme: (model: string) => void; model: string; setModel: (model: string) => void }
+const Navbar = ({ theme, setTheme, model, setModel, onReset }:
+  { theme: string; setTheme: (model: string) => void; model: string; setModel: (model: string) => void; onReset: () => void }
 ) => {
 
   const toggle = () => {
@@ -21,7 +21,7 @@ const Navbar = ({ theme, setTheme, model, setModel }:
   }
   // for rendering models dynamically
   const navItems = [
-    { label: 'Home', value: 'black-scholes' },
+    { label: 'Home', value: 'black-scholes', action: 'reset' },
     { label: 'Black Scholes', value: 'black-scholes' },
     { label: 'Monte Carlo', value: 'monte-carlo' },
     { label: 'Binomial', value: 'binomial' }
@@ -34,7 +34,12 @@ const Navbar = ({ theme, setTheme, model, setModel }:
         {navItems.map((item, idx) => (
           <li
             key={idx}
-            onClick={() => setModel(item.value)}
+            onClick={() => {
+              if (item.action === 'reset')
+                onReset();
+              setModel(item.value)
+            }
+            }
             className={model === item.value ? 'active' : ''}
           >
             {item.label}

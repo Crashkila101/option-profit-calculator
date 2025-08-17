@@ -46,7 +46,7 @@ def binomial(S, K, T, b, r, sigma, N, option_type, option_style = "american"):
 
     return price[0]
 
-def monte_carlo(S, K, T, r, sigma, N, option_type, option_style):
+def monte_carlo(S, K, T, r, sigma, N, option_type, option_style = "european"):
     """Monte-Carlo evaluation"""
     dt = T/N # Timestep t
     n = 100000 # Number of simulations
@@ -137,14 +137,16 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
     # log_returns = np.log(change[1:] / change[:-1])
     # sigma = np.std(log_returns) * np.sqrt(252.0)
 
-    # Stock price range: ±10% of current
-    prices = np.linspace(current_price * 1.1, current_price * 0.9, 25)
-    
+
     # Days from now until expiry
     days = (expiry_date - today).days+1
     if days <= 0:
         return {"error": "Expiry date is in the past"}
-    times = np.append(np.arange(days, 0, -1), 0.0001) # t (time until expiry)
+    T_curr = days / 365.25
+
+    # Stock price range: ±10% of current
+    prices = np.linspace(current_price * 1.1, current_price * 0.9, 25)
+    times = np.append(np.arange(days, 0, -1), 0.0001) # Append intrinsic value (T=0) to end
 
     # Fill heatmap with cells x,y(time till expiry, stock price) with option profit Z
     Z = []
@@ -153,11 +155,11 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
         for t in times:
             T = t / 365.25
             # sigma = get_implied_vol(S, strike, T, r, sigma, premium, option_type)
-            if(model=='black-scholes'):
+            if model=='black-scholes':
                 option_price = black_scholes(S, strike, T, b, r, sigma, option_type)
-            elif(model=='binomial'):
+            elif model=='binomial':
                 option_price = binomial(S, strike, T, b, r, sigma, N, option_type)
-            elif(model=='monte-carlo'):
+            elif model=='monte-carlo':
                 option_price = monte_carlo(S, strike, T, r, sigma, N, option_type, option_style="european")
             else: raise ValueError("Unsupported pricing model")
             # intrinsic_value = max(S - strike, 0) if option_type == "call" else max(strike - S, 0)
@@ -168,8 +170,41 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
             row.append(profit)
         Z.append(row)
 
+    # Option metrics calculation
+
+    # Breakeven price at expiry
+    if option_type == "call":
+        breakeven = strike + premium
+    else:
+        breakeven = strike - premium
+
+    # Probability of profit (for long strategy)
+    d2_profit = (np.log(current_price / breakeven) + (b - 0.5 * sigma**2) * T_curr) / (sigma * np.sqrt(T_curr))
+    if option_type == "call":
+        prob_profit = norm.cdf(d2_profit)
+    else:
+        prob_profit = norm.cdf(-d2_profit)
+
+    # Maximum risk (for long strategy)
+    max_risk = premium * 100
+
+    # Maximum return
+    if option_type == "call":
+        max_return = "Unlimited"
+    else:
+        max_return = (max(strike - 0, 0) - premium) * 100 # Stock price at 0
+
     return {
         "z": Z,
         "y": list(map(float, prices)),
         "x": list(map(int, times)),
-    }     
+        "metrics": {
+            "current_price": round(current_price, 2),
+            "strike": strike,
+            "entry_cost": max_risk,
+            "max_risk": max_risk,
+            "probability_profit": round(prob_profit * 100, 2),
+            "max_return": max_return,
+            "breakeven_price": round(breakeven, 2)
+        }
+    }

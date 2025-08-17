@@ -27,6 +27,13 @@ export default function Home() {
   const [heatmap, setHeatmap] = useState<HeatmapData | null>(null);
   const [theme, setTheme] = useState('light');
 
+  const resetApp = () => {
+    setTicker('');
+    setContracts([]);
+    setSelectedIndex(null);
+    setHeatmap(null);
+  };
+
   const fetchContracts = async () => {
     try {
       const res = await axios.get<{ contracts: OptionContract[] }>(
@@ -66,7 +73,7 @@ export default function Home() {
 
   return (
     <div className={`container ${theme}`}>
-      <Navbar theme={theme} setTheme={setTheme} model={model} setModel={setModel} />
+      <Navbar theme={theme} setTheme={setTheme} model={model} setModel={setModel} onReset={resetApp} />
       <div className="content-wrapper">
         <div className="ticker-input-group">
           <input
@@ -137,11 +144,11 @@ export default function Home() {
                     size: 10,
                     color: "auto"
                   },
-                  hovertemplate: 'Days: %{x}<br>Price: $%{y}<br>P&L: $%{z:.2f}<extra></extra>'
+                  hovertemplate: 'DTE: %{x}<br>Price: $%{y}<br>P&L: $%{z:.2f}<extra></extra>'
                 }
               ]}
               layout={{
-                title: { text: `Profit Heatmap for ${ticker} ${contracts[selectedIndex!].type} $${contracts[selectedIndex!].strike}` },
+                title: { text: `Profit Heatmap for $${contracts[selectedIndex!].strike} ${ticker} ${contracts[selectedIndex!].type} expiring at ${contracts[selectedIndex!].expiry}` },
                 xaxis: {
                   title: { text: 'Days Until Expiry' },
                   autorange: 'reversed',
@@ -153,6 +160,34 @@ export default function Home() {
                 height: 700
               }}
             />
+          )}
+        </div>
+        <div className="option-metrics-container">
+          {heatmap && (
+              <div className="option-metrics">
+                <h3>Estimated returns:</h3>
+                <div className="metrics-grid">
+                  <div className="metric-card probability">
+                    <h4>Probability of Profit</h4>
+                    <div className="metric-value">{heatmap.metrics.probability_profit}%</div>
+                  </div>
+
+                  <div className="metric-card risk">
+                    <h4>Maximum Risk</h4>
+                    <div className="metric-value">${heatmap.metrics.max_risk}</div>
+                  </div>
+
+                  <div className="metric-card return">
+                    <h4>Maximum Return</h4>
+                    <div className="metric-value">${heatmap.metrics.max_return}</div>
+                  </div>
+
+                  <div className="metric-card breakeven">
+                    <h4>Breakeven Price at expiry</h4>
+                    <div className="metric-value">${heatmap.metrics.breakeven_price}</div>
+                  </div>
+                </div>
+              </div>
           )}
         </div>
       </div>
