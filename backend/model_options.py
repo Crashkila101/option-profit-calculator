@@ -185,12 +185,15 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
         breakeven = strike - premium
 
     # Probability of profit (for long strategy)
-    d2_profit = (np.log(current_price / breakeven) + (b - 0.5 * sigma**2) * T_curr) / (sigma * np.sqrt(T_curr))
+    d1_breakeven = (np.log(current_price / breakeven) + (b + 0.5 * sigma**2) * T_curr) / (sigma * np.sqrt(T_curr))
+    d2_breakeven = d1_breakeven - sigma * np.sqrt(T_curr)
     if option_type == "call":
-        prob_profit = norm.cdf(d2_profit)
+        prob_profit = norm.cdf(d2_breakeven)
     else:
-        prob_profit = norm.cdf(-d2_profit)
+        prob_profit = norm.cdf(-d2_breakeven)
 
+    prob_profit *= 100
+    print(prob_profit)
     # Maximum risk (for long strategy)
     max_risk = premium * 100
 
@@ -240,7 +243,7 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
             "premium": premium,
             "entry_cost": round(max_risk, 2),
             "max_risk": round(max_risk, 2),
-            "probability_profit": round(prob_profit * 100, 2),
+            "probability_profit": round(prob_profit, 2),
             "max_return": max_return,
             "breakeven_price": round(breakeven, 2),
             "delta": delta,
