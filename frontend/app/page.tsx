@@ -101,14 +101,14 @@ export default function Home() {
             <option value="">Select an Option Contract</option>
             {/* Group contracts by expiry */}
             {Object.entries(
-              contracts.reduce((groups: any, contract, i) => {
+              contracts.reduce((groups: Record<string, Array<OptionContract & { index: number }>>, contract, i) => {
                 if (!groups[contract.expiry]) groups[contract.expiry] = [];
                 groups[contract.expiry].push({ ...contract, index: i });
                 return groups;
-              }, {})
+              }, {} as Record<string, Array<OptionContract & { index: number }>>)
             ).map(([expiry, contractsForExpiry]) => (
               <optgroup key={expiry} label={`Expiry: ${expiry}`}>
-                {contractsForExpiry.map((c: any) => (
+                {contractsForExpiry.map((c) => (
                   <option key={c.index} value={c.index}>
                     {c.type.toUpperCase()} ${c.strike} (premium: ${c.premium})
                   </option>
@@ -168,16 +168,17 @@ export default function Home() {
         <div className="option-metrics-container">
           {heatmap && (
               <div className="option-metrics">
+        
                 <h3>Estimated returns:</h3>
                 <div className="metrics-grid">
                   <div className="metric-card current-price">
                     <h4>Current Price</h4>
-                    <div className="metric-value">{heatmap.metrics.current_price}</div>
+                    <div className="metric-value">${heatmap.metrics.current_price}</div>
                   </div>
 
                   <div className="metric-card strike">
                     <h4>Strike Price</h4>
-                    <div className="metric-value">{heatmap.metrics.strike}</div>
+                    <div className="metric-value">${heatmap.metrics.strike}</div>
                   </div>
                   
                   <div className="metric-card premium">
@@ -208,6 +209,35 @@ export default function Home() {
                   <div className="metric-card breakeven">
                     <h4>Breakeven Price at Expiry</h4>
                     <div className="metric-value">${heatmap.metrics.breakeven_price}</div>
+                  </div>
+                </div>
+
+                <h3>Greeks:</h3>
+                <div className="metrics-grid">
+                  <div className="metric-card delta">
+                    <h4>Delta (Δ)</h4>
+                    <div className="metric-value">{heatmap.metrics.delta}<br/>Sensitivity of option price to change in price of the underlying stock</div>
+                  </div>
+
+                  <div className="metric-card gamma">
+                    <h4>Gamma (Γ)</h4>
+                    <div className="metric-value">{heatmap.metrics.gamma}<br/>Sensitivity of option price to change in delta</div>
+                  </div>
+
+                  <div className="metric-card theta">
+                    <h4>Theta (Θ)</h4>
+                    <div className="metric-value">{heatmap.metrics.theta}<br/>Sensitivity of option price to change in time</div>
+                  </div>
+
+                  <div className="metric-card vega">
+                    <h4>Vega (ν)</h4>
+                    <div className="metric-value">{heatmap.metrics.vega}<br/>Sensitivity of option price to change in volatility</div>
+                  </div>
+
+                  <div className="metric-card rho">
+                    <h4>Rho (ρ)</h4>
+                    <div className="metric-value">{heatmap.metrics.rho}<br/>Sensitivity of option price to change in interest rate</div>
+                    
                   </div>
                 </div>
               </div>

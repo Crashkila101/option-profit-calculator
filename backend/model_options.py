@@ -1,9 +1,43 @@
 import numpy as np
 from scipy.stats import norm
 from datetime import datetime
-# from jax import grad
 import yfinance as yf
+# from jax import grad
 
+# # Functions to solve for implied volatility using automatic differentiations
+# def loss_function(S, K, T, b, r, sigma, premium, option_type):
+#     """Minimise premium discrepancy (L1 Loss)"""
+#     # Get premium estimate with our current guess for sigma
+#     theoretical_premium = black_scholes(S, K, T, b, r, sigma, option_type)
+
+#     # Minimise difference between theoretical and actual market premium
+#     return (theoretical_premium - premium)
+
+# # Partial derivative(gradient) of loss function w.r.t sigma
+# sigma_grad = grad(loss_function, argnums=4)
+
+# def get_implied_vol(S, K, T, b, r, sigma, premium, option_type):
+#     """Compute implied volatility"""
+#     epsilon = .001 # Maximum difference between theoretical and actual
+#     max_iter = 20 # Stop at 20 iterations 
+#     converged = False
+#     for i in range(max_iter):
+#         # Compute gradient of loss function w.r.t sigma
+#         loss_gradient = sigma_grad(S, K, T, b, r, sigma, premium, option_type)
+#         loss = loss_function(S, K, T, b, r, sigma, premium, option_type)
+        
+#         print(f"Iter {i}: sigma = {sigma:.6f}, loss = {loss:.6f}, grad = {loss_gradient:.6f}")
+        
+#         # If discrepancy is less than tolerance, stop
+#         if abs(loss) < epsilon:
+#             converged = True
+#             break
+#         else:   
+#             # Update sigma according to Newton's method
+#             sigma = sigma - loss / loss_gradient
+#     if not converged:
+#         print("Did not converge")
+#     return sigma
 
 def black_scholes(S, K, T, b, r, sigma, option_type):
     """Black-Scholes evaluation"""
@@ -80,40 +114,7 @@ def monte_carlo(S, K, T, r, sigma, N, option_type, option_style = "european"):
     price = np.exp(-r * T) * np.mean(payoff)
     return price
 
-# # Functions to solve for implied volatility using automatic differentiations
-# def loss_function(S, K, T, b, r, sigma, premium, option_type):
-#     """Minimise premium discrepancy (L1 Loss)"""
-#     # Get premium estimate with our current guess for sigma
-#     theoretical_premium = black_scholes(S, K, T, b, r, sigma, option_type)
 
-#     # Minimise difference between theoretical and actual market premium
-#     return (theoretical_premium - premium)
-
-# # Partial derivative(gradient) of loss function w.r.t sigma
-# sigma_grad = grad(loss_function, argnums=4)
-
-# def get_implied_vol(S, K, T, b, r, sigma, premium, option_type):
-#     """Compute implied volatility"""
-#     epsilon = .001 # Maximum difference between theoretical and actual
-#     max_iter = 20 # Stop at 20 iterations 
-#     converged = False
-#     for i in range(max_iter):
-#         # Compute gradient of loss function w.r.t sigma
-#         loss_gradient = sigma_grad(S, K, T, b, r, sigma, premium, option_type)
-#         loss = loss_function(S, K, T, b, r, sigma, premium, option_type)
-        
-#         print(f"Iter {i}: sigma = {sigma:.6f}, loss = {loss:.6f}, grad = {loss_gradient:.6f}")
-        
-#         # If discrepancy is less than tolerance, stop
-#         if abs(loss) < epsilon:
-#             converged = True
-#             break
-#         else:   
-#             # Update sigma according to Newton's method
-#             sigma = sigma - loss / loss_gradient
-#     if not converged:
-#         print("Did not converge")
-#     return sigma
 
 def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
     """Heatmap generation"""
@@ -175,7 +176,7 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
             row.append(profit)
         Z.append(row)
 
-    # Option metrics calculation
+    """Options Metrics"""
 
     # Breakeven price at expiry
     if option_type == "call":
@@ -199,6 +200,36 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
     else:
         max_return = (max(strike - 0, 0) - premium) * 100 # Stock price at 0
 
+    """Greeks"""
+
+    d1 = (np.log(S / strike) + (b + 0.5 * sigma**2) * T_curr) / (sigma * np.sqrt(T_curr))
+    d2 = d1 - sigma * np.sqrt(T_curr)
+
+    # Delta (Sensitivity of option price to change in price of underlying)
+    if option_type == "call":
+        delta = norm.cdf(d1)
+    else:
+        delta = norm.cdf(d1) - 1
+
+    # Gamma (Sensitivity of option price to change in delta)
+    gamma = norm.pdf(d1) / (current_price * sigma * np.sqrt(T_curr))
+
+    # Theta (Sensitivity of option price to change in time)
+    if option_type == "call":
+        theta = (-(current_price * norm.pdf(d1) * sigma) / (2 * np.sqrt(T_curr)) - b * strike * np.exp(-b * T_curr) * norm.cdf(d2)) / 365
+    else:
+        theta = (-(current_price * norm.pdf(d1) * sigma) / (2 * np.sqrt(T_curr)) + b * strike * np.exp(-b * T_curr) * norm.cdf(-d2)) / 365
+    
+    # Vega (Sensitivity of option price to change in volatility)
+    vega = current_price * np.sqrt(T_curr) * norm.pdf(d1) / 100
+
+    # Rho (Sensitivity of option price to change in interest rate)
+    if option_type == "call":
+        rho = strike * T_curr * np.exp(-r * T_curr) * norm.cdf(d2) / 100
+    else:
+        rho = -strike * T_curr * np.exp(-r * T_curr) * norm.cdf(-d2) / 100
+
+
     return {
         "z": Z,
         "y": list(map(float, prices)),
@@ -211,6 +242,11 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
             "max_risk": round(max_risk, 2),
             "probability_profit": round(prob_profit * 100, 2),
             "max_return": max_return,
-            "breakeven_price": round(breakeven, 2)
+            "breakeven_price": round(breakeven, 2),
+            "delta": delta,
+            "gamma": gamma,
+            "theta": theta,
+            "vega": vega,
+            "rho": rho
         }
     }
