@@ -15,9 +15,10 @@ type OptionContract = {
   model: 'black-scholes' | 'monte-carlo' | 'binomial'
 };
 
+
 type HeatmapData = {
-  x: number[];
-  y: number[];
+  x: number[] | string[];
+  y: number[] | string[];
   z: number[][];
   metrics: any;
 };
@@ -137,16 +138,10 @@ export default function Home() {
                   type: 'heatmap',
                   colorscale: [
                     [0.0, 'rgb(255, 0, 0)'],     // full red
-                    [0.47, 'rgb(255, 150, 150)'],// light red
                     [0.5, 'rgb(255, 255, 255)'], // white at zero
-                    [0.53, 'rgb(193, 255, 193)'],// light green
                     [1.0, 'rgb(0, 255, 0)'],     // full green
                   ],
-                  zmid: 0,  // center color scale at 0
-                  text: heatmap.z.map(row =>
-                    row.map(value => value.toFixed(0))
-                  ),
-                  texttemplate: "%{text}",
+                  texttemplate: "%{z:.0f}",
                   textfont: {
                     size: 10,
                     color: "auto"

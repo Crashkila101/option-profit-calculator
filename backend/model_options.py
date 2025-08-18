@@ -191,9 +191,8 @@ def calculate_heatmap_data(ticker, strike, premium, option_type, expiry, model):
         prob_profit = norm.cdf(d2_breakeven)
     else:
         prob_profit = norm.cdf(-d2_breakeven)
-
     prob_profit *= 100
-    print(prob_profit)
+    
     # Maximum risk (for long strategy)
     max_risk = premium * 100
 
